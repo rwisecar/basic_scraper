@@ -3,6 +3,7 @@ import os
 from bs4 import BeautifulSoup
 import pprint
 
+
 # Get your requests set up, and write to a txt file
 url = "http://tinyurl.com/sample-oss-posts"
 ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36"
@@ -41,4 +42,4 @@ for cat, title in paired:
     list = groups.setdefault(cat, [])
     list.append(title)
 
-pprint.pprint(groups['django'])
+# pprint.pprint(groups['django'])
