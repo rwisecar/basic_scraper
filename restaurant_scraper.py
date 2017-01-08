@@ -2,8 +2,9 @@
 
 from bs4 import BeautifulSoup
 import io
-import sys
+import re
 import requests
+import sys
 
 """Constant Global Variables for setting up query."""
 
@@ -30,14 +31,14 @@ INSPECTION_PARAMS = {
 
 def get_inspection_page(**kwargs):
     """Make a request to KC's site, return content in bytes."""
-    url = "{}/{}".format(INSPECTION_DOMAIN, INSPECTION_PATH)
+    url = INSPECTION_DOMAIN + INSPECTION_PATH
     ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36'
     headers = {"User-Agent": ua}
     params = INSPECTION_PARAMS.copy()
     for key, val in kwargs.items():
         if key in INSPECTION_PARAMS:
             params[key] = val
-    resp = requests.get(url, headers=headers, params=params)
+    resp = requests.get(url, params=params, headers=headers)
     resp.raise_for_status()
     return resp.content
 
@@ -58,9 +59,15 @@ def create_html_file(content):
 
 
 def parse_source(html):
-    # Parse the html using BeautifulSoup and html5lib
+    """Parse the html using BeautifulSoup and html5lib"""
     parsed = BeautifulSoup(html, "html5lib")
     return parsed
+
+
+def extract_data_listings(html):
+    """Parse through listings by divs with a particular id."""
+    id_finder = re.compile(r'PR[\d]+~')
+    return html.find_all('div', id=id_finder)
 
 
 if __name__ == "__main__":
