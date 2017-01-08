@@ -70,16 +70,41 @@ def extract_data_listings(html):
     return html.find_all('div', id=id_finder)
 
 
+def has_two_tds(element):
+    """Return True if the element is both a <tr> and has two <td>s."""
+    row = element.name == 'tr'
+    td_children = element.find_all('td', recursive=False)
+    has_two = len(td_children) == 2
+    return row and has_two
+
+
+def clean_data(td):
+    """Clean extra characters off the string we want."""
+    data = td.string
+    try:
+        return data.strip(" \n:-")
+    except AttributeError:
+        return u""
+
+
 if __name__ == "__main__":
     kwargs = {
         'Inspection_Start': '1/1/2016',
         'Inspection_End': '1/1/2017',
         'Zip_Code': '98115'
     }
-
     if len(sys.argv) > 1 and sys.argv[1] == 'test':
         html = load_inspection_page('inspection_page.html')
     else:
         html = create_html_file(get_inspection_page(**kwargs))
     doc = parse_source(html)
-    print(doc)
+    listings = extract_data_listings(doc)
+    for listing in listings:
+        metadata = listing.find('tbody').find_all(
+            has_two_tds, recursive=False
+        )
+        for row in metadata:
+            for td in row.find_all('td', recursive=False):
+                print(repr(clean_data(td)))
+            print()
+        print()
