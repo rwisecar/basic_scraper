@@ -35,7 +35,7 @@ def get_title(entry):
 
 paired = [(get_classifier(e), get_title(e)) for e in entries]
 
-# Create a dictionary with tags, titles so you can search by tags.
+# Create a dictionary with categorized post titles.
 groups = {}
 for cat, title in paired:
     list = groups.setdefault(cat, [])
