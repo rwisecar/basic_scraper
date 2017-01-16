@@ -18,4 +18,6 @@ This terminal command will run the scraper off the live website.
 
 #Resources
 [Lecture Notes](https://codefellows.github.io/sea-python-401d5/lectures/scraping.html)
+
+
 [Sandbox Assignment](https://codefellows.github.io/sea-python-401d5/assignments/tutorials/scraper.html)
