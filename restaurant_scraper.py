@@ -29,39 +29,41 @@ INSPECTION_PARAMS = {
 }
 
 
+UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36'
+HEADERS = {"User-Agent": UA}
+
+
 def get_inspection_page(**kwargs):
     """Make a request to KC's site, return content in bytes."""
     url = INSPECTION_DOMAIN + INSPECTION_PATH
-    ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36'
-    headers = {"User-Agent": ua}
     params = INSPECTION_PARAMS.copy()
     for key, val in kwargs.items():
         if key in INSPECTION_PARAMS:
             params[key] = val
-    resp = requests.get(url, params=params, headers=headers)
+    resp = requests.get(url, params=params, headers=HEADERS, stream=True)
     resp.raise_for_status()
-    return resp.content
+    return resp.content, resp.encoding
 
 
-def load_inspection_page(filename):
+def load_inspection_page():
     """Read the data on the disk and return html."""
-    f = io.open(filename, 'r+', encoding='utf-8')
-    inspection_page = f.read()
+    f = io.open('inspection_page.html', 'r+')
+    content = f.read()
+    encoding = 'utf-8'
     f.close()
-    return inspection_page
+    return content, encoding
 
 
 def create_html_file(content):
-    """Take response object's contents in bytes and write to html file."""
-    with open('inspection_page.html', 'wb+') as f:
+    """Take response object's contents and write to html file."""
+    with open('inspection_page.html', 'w') as f:
         f.write(content)
-    return load_inspection_page('inspection_page.html')
 
 
-def parse_source(html):
+def parse_source(html, encoding='utf-8'):
     """Parse the html using BeautifulSoup and html5lib"""
-    parsed = BeautifulSoup(html, "html5lib")
-    return parsed
+    soup = BeautifulSoup(html, "html5lib")
+    return soup
 
 
 def extract_data_listings(html):
@@ -72,10 +74,10 @@ def extract_data_listings(html):
 
 def has_two_tds(element):
     """Return True if the element is both a <tr> and has two <td>s."""
-    row = element.name == 'tr'
+    is_true = element.name == 'tr'
     td_children = element.find_all('td', recursive=False)
     has_two = len(td_children) == 2
-    return row and has_two
+    return is_true and has_two
 
 
 def clean_data(td):
@@ -104,15 +106,15 @@ def extract_restaurant_metadata(element):
 
 def is_inspection_row(element):
     """Filter for rows that contain keyword 'inspection'."""
-    is_tr = element.name == 'tr'
-    if not is_tr:
+    is_true = element.name == 'tr'
+    if not is_true:
         return False
     td_children = element.find_all('td', recursive=False)
     has_four = len(td_children) == 4
     this_text = clean_data(td_children[0]).lower()
     contains_word = 'inspection' in this_text
     does_not_start = not this_text.startswith('inspection')
-    return is_tr and has_four and contains_word and does_not_start
+    return is_true and has_four and contains_word and does_not_start
 
 
 def extract_score_data(element):
@@ -146,12 +148,15 @@ if __name__ == "__main__":
         'Zip_Code': '98115'
     }
     if len(sys.argv) > 1 and sys.argv[1] == 'test':
-        html = load_inspection_page('inspection_page.html')
+        html, encoding = load_inspection_page()
     else:
-        html = create_html_file(get_inspection_page(**kwargs))
-    doc = parse_source(html)
+        html, encoding = get_inspection_page(**kwargs)
+    doc = parse_source(html, encoding)
     listings = extract_data_listings(doc)
-    for listing in listings[:5]:
+    for listing in listings:
         metadata = extract_restaurant_metadata(listing)
+        inspection_row = listing.find_all(is_inspection_row)
         score_data = extract_score_data(listing)
-        print(score_data)
+        metadata.update(score_data)
+        for key, value in metadata.items():
+            print(key, value)
